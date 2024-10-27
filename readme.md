@@ -1,6 +1,12 @@
 ﻿# GuessHex
 A simple terminal-based game where you guess the hexadecimal value of a square drawn in the terminal.
 
+## Installation
+You can install guesshex using [scoop](https://scoop.sh/).
+```bash
+$ scoop install https://raw.githubusercontent.com/Melodi17/guesshex/refs/heads/master/deploy/guesshex.json
+```
+
 ## Usage
 Simply invoke it from the commandline and start guessing!
 ```bash

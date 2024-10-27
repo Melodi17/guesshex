@@ -22,7 +22,9 @@ public class Color
     public Color(string hex)
     {
         (this.R, this.G, this.B) = Utils.HexToRgb(hex);
-        this.Hex = hex;
+        this.Hex = hex.ToUpper();
+        if (this.Hex.Length == 6)
+            this.Hex = "#" + this.Hex;
     }
 
     private static string GetColorName(int r, int g, int b)

@@ -54,7 +54,7 @@ class Program
                     .Select(x => Math.Abs(x)) // get abs, so -1 and 1 are the same
                     .Sum()) // sum all diffs
             .Sum(); // sum all rounds
-        Console.WriteLine(Utils.Color("Inaccuracy: " + accuracy, ConsoleColor.Cyan));
+        Console.Write(Utils.Color($"Inaccuracy: {accuracy} ", ConsoleColor.Cyan));
         
         (string text, ConsoleColor color) score = accuracy switch
         {

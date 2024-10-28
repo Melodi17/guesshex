@@ -15,7 +15,7 @@ internal class Program
 
         Random r = new();
         Round round = new(targetColor: r.NextColor());
-        
+
         while (true)
         {
             Console.Clear();
@@ -35,14 +35,18 @@ internal class Program
         }
 
         Console.WriteLine();
-        if (round.TargetColor == round.GuessColor)
+        if (round.TargetColor.Hex == round.GuessColor.Hex)
             Console.WriteLine(Utils.Color("You won in " + round.RoundNumber + " rounds!", ConsoleColor.Green));
         else
             Console.WriteLine(Utils.Color("You lose!", ConsoleColor.Red));
-        
-        Console.Write(Utils.Color($"Inaccuracy: {round.Inaccuracy} ", ConsoleColor.Cyan));
-        
-        (string text, ConsoleColor color) score = round.Inaccuracy switch
+
+        int inaccuracy = round.CalculateInaccuracy();
+        int inaccuracy_w = round.CalculateWeightedInaccuracy();
+
+
+        Console.Write(Utils.Color($"Inaccuracy: {inaccuracy} ({inaccuracy_w}w)  ", ConsoleColor.Cyan));
+
+        (string text, ConsoleColor color) score = inaccuracy switch
         {
             0 => ("Perfect!", ConsoleColor.Magenta),
             < 5 => ("Insane", ConsoleColor.Cyan),
@@ -52,9 +56,41 @@ internal class Program
             < 100 => ("Not bad", ConsoleColor.Red),
             _ => ("Bad", ConsoleColor.Gray)
         };
-        
+
+
+        string filePath = Path.Join(Path.GetDirectoryName(Environment.ProcessPath), "data.json");
+        List<(int s, string c)> scores = File.Exists(filePath)
+            ? JsonConvert.DeserializeObject<List<(int, string)>>(File.ReadAllText(filePath))!
+            : new();
+
+        if (scores.Count > 0 && scores.Max(x => x.s) < inaccuracy)
+        {
+            Console.WriteLine(Utils.Color("New high score!", ConsoleColor.Magenta));
+            Console.WriteLine(Utils.Color("Previous high score: " + scores.Max(x => x.s), ConsoleColor.DarkGray));
+        }
+
+        if (scores.Count > 0)
+        {
+            int avg = (int)scores.Average(x => x.s);
+
+            scores.Add((inaccuracy, round.TargetColor.Hex));
+
+            int avg_new = (int)scores.Average(x => x.s);
+
+            ConsoleColor c = avg_new < avg ? ConsoleColor.Green :
+                avg_new > avg ? ConsoleColor.Red : ConsoleColor.DarkGray;
+            Console.WriteLine(Utils.Color(
+                $"Average score: {Utils.Color(avg.ToString(), c)} -> {Utils.Color(avg_new.ToString(), c)}",
+                ConsoleColor.DarkGray));
+        }
+        else
+            scores.Add((inaccuracy, round.TargetColor.Hex));
+
+        File.WriteAllText(filePath, JsonConvert.SerializeObject(scores));
+
         Console.WriteLine(Utils.Color($"[{score.text}]", score.color));
-        Console.WriteLine(Utils.Color($"The color was {round.TargetColor.Name} ({round.TargetColor.Hex})", round.TargetColor));
+        Console.WriteLine(Utils.Color($"The color was {round.TargetColor.Name} ({round.TargetColor.Hex})",
+            round.TargetColor));
     }
 
     private static Color InputColor()
@@ -84,7 +120,9 @@ internal class Program
             Console.Write(string.Join(" ", text.ToArray()) + " ");
         }
     }
+
     private static void DrawLine() => Console.WriteLine("  ------------------------------");
+
     private static void DrawColors(Color targetColor, Color guessColor)
     {
         int y = Console.CursorTop;
@@ -95,6 +133,7 @@ internal class Program
 
         Console.SetCursorPosition(1, y + size);
     }
+
     private static void DrawColoredSquare(Color color, int x, int y, int size)
     {
         for (int i = 0; i < size; i++)
@@ -103,6 +142,7 @@ internal class Program
             Console.Write(Utils.Color(new string('\u2588', size * 2), color));
         }
     }
+
     private static void DrawGuess(Color targetColor, Color guessColor, int roundNumber)
     {
         int[] diff = Round.CalculateHexDiff(targetColor, guessColor);

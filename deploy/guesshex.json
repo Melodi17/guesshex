@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "url": "https://github.com/Melodi17/guesshex/releases/download/v1.0.0/guesshex.exe",
+  "version": "1.0.1",
+  "url": "https://github.com/Melodi17/guesshex/releases/download/v1.0.1/guesshex.exe",
   "bin": "guesshex.exe", 
   "homepage": "https://github.com/Melodi17/guesshex",
   "license": "MIT",

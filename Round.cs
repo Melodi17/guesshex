@@ -23,10 +23,8 @@ public class Round
     public List<Color> Guesses { get; set; } = new();
     [JsonIgnore] public int RoundNumber => this.Guesses.Count;
     [JsonIgnore] public bool Completed => this.RoundNumber == MaxGuesses || this.TargetColor.Hex == this.GuessColor.Hex;
-
-    [JsonIgnore] public int Inaccuracy => this.CalculateInaccuracy(); // sum all rounds
-
-    private int CalculateInaccuracy()
+    
+    public int CalculateInaccuracy()
     {
         return this.Guesses.Select(g =>
                 CalculateHexDiff(this.TargetColor, g) // get hex diff array
@@ -35,7 +33,7 @@ public class Round
             .Sum();
     }
 
-    private int CalculateWeightedInaccuracy()
+    public int CalculateWeightedInaccuracy()
     {
         return this.Guesses.Select((g, i) =>
                 ApplyWeights(
@@ -45,7 +43,6 @@ public class Round
                         ]) // weight according to position, 1, 3 and 5 being the most significant digits
                     .Select(x => Math.Abs(x)) // get abs, so -1 and 1 are the same
                     .Sum()
-                * (5 - i)
             ) // sum all diffs
             .Sum();
     }

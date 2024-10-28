@@ -2,11 +2,9 @@
 
 namespace guesshex;
 
-class Program
+internal class Program
 {
-    const int MaxGuesses = 5;
-
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         PInvoke.EnableVTMode();
@@ -16,50 +14,39 @@ class Program
         Color.KnownColors = JsonConvert.DeserializeObject<List<ColorJsonObj>>(json)!;
 
         Random r = new();
-
-        Color targetColor = r.NextColor();
-        Color guessColor = new(128, 128, 128);
-
-        List<Color> guesses = new();
-
+        Round round = new(targetColor: r.NextColor());
+        
         while (true)
         {
             Console.Clear();
-            DisplayColors(targetColor, guessColor);
+            DrawColors(round.TargetColor, round.GuessColor);
             Console.WriteLine();
-            for (int i = 0; i < guesses.Count; i++)
+            for (int i = 0; i < round.Guesses.Count; i++)
             {
-                DrawGuess(targetColor, guesses[i], i + 1);
+                DrawGuess(round.TargetColor, round.Guesses[i], i + 1);
                 DrawLine();
             }
 
-            if (guessColor.Hex == targetColor.Hex || guesses.Count >= MaxGuesses)
+            if (round.Completed)
                 break;
 
             Console.WriteLine();
-            guessColor = InputColor();
-            guesses.Add(guessColor);
+            round.GuessColor = InputColor();
         }
 
         Console.WriteLine();
-        if (guessColor.Hex == targetColor.Hex)
-        {
-            Console.WriteLine(Utils.Color("You won in " + (guesses.Count) + " rounds!", ConsoleColor.Green));
-        }
+        if (round.TargetColor == round.GuessColor)
+            Console.WriteLine(Utils.Color("You won in " + round.RoundNumber + " rounds!", ConsoleColor.Green));
         else
             Console.WriteLine(Utils.Color("You lose!", ConsoleColor.Red));
-
-        int accuracy = guesses.Select(g =>
-                CalculateHexDiff(targetColor, g) // get hex diff array
-                    .Select(x => Math.Abs(x)) // get abs, so -1 and 1 are the same
-                    .Sum()) // sum all diffs
-            .Sum(); // sum all rounds
-        Console.Write(Utils.Color($"Inaccuracy: {accuracy} ", ConsoleColor.Cyan));
         
-        (string text, ConsoleColor color) score = accuracy switch
+        Console.Write(Utils.Color($"Inaccuracy: {round.Inaccuracy} ", ConsoleColor.Cyan));
+        
+        (string text, ConsoleColor color) score = round.Inaccuracy switch
         {
-            0 => ("Perfect", ConsoleColor.Magenta),
-            < 10 => ("Amazing", ConsoleColor.Cyan),
+            0 => ("Perfect!", ConsoleColor.Magenta),
+            < 5 => ("Insane", ConsoleColor.Cyan),
+            < 10 => ("Amazing", ConsoleColor.DarkCyan),
             < 30 => ("Great", ConsoleColor.Green),
             < 50 => ("Good", ConsoleColor.Yellow),
             < 100 => ("Not bad", ConsoleColor.Red),
@@ -67,8 +54,7 @@ class Program
         };
         
         Console.WriteLine(Utils.Color($"[{score.text}]", score.color));
-
-        Console.WriteLine(Utils.Color($"The color was {targetColor.Name} ({targetColor.Hex})", targetColor));
+        Console.WriteLine(Utils.Color($"The color was {round.TargetColor.Name} ({round.TargetColor.Hex})", round.TargetColor));
     }
 
     private static Color InputColor()
@@ -98,13 +84,8 @@ class Program
             Console.Write(string.Join(" ", text.ToArray()) + " ");
         }
     }
-
-    private static void DrawLine()
-    {
-        Console.WriteLine("  ------------------------------");
-    }
-
-    static void DisplayColors(Color targetColor, Color guessColor)
+    private static void DrawLine() => Console.WriteLine("  ------------------------------");
+    private static void DrawColors(Color targetColor, Color guessColor)
     {
         int y = Console.CursorTop;
         const int size = 7;
@@ -114,10 +95,17 @@ class Program
 
         Console.SetCursorPosition(1, y + size);
     }
-
-    static void DrawGuess(Color targetColor, Color guessColor, int roundNumber)
+    private static void DrawColoredSquare(Color color, int x, int y, int size)
     {
-        int[] diff = CalculateHexDiff(targetColor, guessColor);
+        for (int i = 0; i < size; i++)
+        {
+            Console.SetCursorPosition(x * 2, y + i);
+            Console.Write(Utils.Color(new string('\u2588', size * 2), color));
+        }
+    }
+    private static void DrawGuess(Color targetColor, Color guessColor, int roundNumber)
+    {
+        int[] diff = Round.CalculateHexDiff(targetColor, guessColor);
 
         const string spacing = "   ";
 
@@ -162,31 +150,5 @@ class Program
         }
 
         Console.WriteLine();
-    }
-
-    static void DrawColoredSquare(Color color, int x, int y, int size)
-    {
-        for (int i = 0; i < size; i++)
-        {
-            Console.SetCursorPosition(x * 2, y + i);
-            Console.Write(Utils.Color(new string('\u2588', size * 2), color));
-        }
-    }
-
-    static int[] CalculateHexDiff(Color targetColor, Color guessColor)
-    {
-        int[] diff = new int[6];
-
-        string targetHex = targetColor.Hex.TrimStart('#');
-        string guessHex = guessColor.Hex.TrimStart('#');
-
-        for (int i = 0; i < 6; i++)
-        {
-            int t = int.Parse(targetHex[i].ToString(), System.Globalization.NumberStyles.HexNumber);
-            int g = int.Parse(guessHex[i].ToString(), System.Globalization.NumberStyles.HexNumber);
-            diff[i] = t - g;
-        }
-
-        return diff;
     }
 }

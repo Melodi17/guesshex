@@ -57,16 +57,17 @@ internal class Program
             _ => ("Bad", ConsoleColor.Gray)
         };
 
+        Console.WriteLine(Utils.Color($"[{score.text}]", score.color));
 
         string filePath = Path.Join(Path.GetDirectoryName(Environment.ProcessPath), "data.json");
         List<(int s, string c)> scores = File.Exists(filePath)
             ? JsonConvert.DeserializeObject<List<(int, string)>>(File.ReadAllText(filePath))!
             : new();
 
-        if (scores.Count > 0 && scores.Max(x => x.s) < inaccuracy)
+        if (scores.Count > 0 && scores.Min(x => x.s) > inaccuracy)
         {
-            Console.WriteLine(Utils.Color("New high score!", ConsoleColor.Magenta));
-            Console.WriteLine(Utils.Color("Previous high score: " + scores.Max(x => x.s), ConsoleColor.DarkGray));
+            Console.WriteLine(Utils.Color("New low score!", ConsoleColor.Magenta));
+            Console.WriteLine(Utils.Color("Previous low score: " + scores.Min(x => x.s), ConsoleColor.DarkGray));
         }
 
         if (scores.Count > 0)
@@ -87,8 +88,7 @@ internal class Program
             scores.Add((inaccuracy, round.TargetColor.Hex));
 
         File.WriteAllText(filePath, JsonConvert.SerializeObject(scores));
-
-        Console.WriteLine(Utils.Color($"[{score.text}]", score.color));
+        
         Console.WriteLine(Utils.Color($"The color was {round.TargetColor.Name} ({round.TargetColor.Hex})",
             round.TargetColor));
     }
